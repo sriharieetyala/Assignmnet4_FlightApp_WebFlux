@@ -58,4 +58,25 @@ public class BookingController {
                     return Mono.just(ResponseEntity.badRequest().body((Object) body));
                 });
     }
+
+
+
+    @GetMapping("/inventory/bookings")
+    public Mono<ResponseEntity<Object>> getBookingHistory(@RequestParam String email) {
+
+        return bookingService.getBookingHistoryByEmail(email)
+                .collectList()                                     // turn Flux → Mono<List>
+                .flatMap(list -> {
+                    if (list.isEmpty()) {
+                        return Mono.just(ResponseEntity.notFound().build());
+                    }
+                    return Mono.just(ResponseEntity.ok((Object) list));
+                })
+                .onErrorResume(err -> {
+                    Map<String, String> body = new HashMap<>();
+                    body.put("message", err.getMessage());
+                    return Mono.just(ResponseEntity.badRequest().body((Object) body));
+                });
+    }
+
 }
