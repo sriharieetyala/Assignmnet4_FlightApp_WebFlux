@@ -1,6 +1,5 @@
-package com.flightapp.dto;
+package com.flightapp.dto.repsonse;
 
-import com.flightapp.dto.repsonse.BookingResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

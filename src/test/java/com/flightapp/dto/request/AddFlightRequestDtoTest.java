@@ -1,6 +1,5 @@
-package com.flightapp.dto;
+package com.flightapp.dto.request;
 
-import com.flightapp.dto.request.AddFlightRequest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

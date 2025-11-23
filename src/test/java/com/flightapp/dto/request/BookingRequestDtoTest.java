@@ -1,7 +1,5 @@
-package com.flightapp.dto;
+package com.flightapp.dto.request;
 
-
-import com.flightapp.dto.request.BookingRequest;
 import com.flightapp.enums.Gender;
 import com.flightapp.enums.MealType;
 import org.junit.jupiter.api.Test;
@@ -25,4 +23,3 @@ class BookingRequestDtoTest {
         assertEquals(3, req.getSeats());
     }
 }
-

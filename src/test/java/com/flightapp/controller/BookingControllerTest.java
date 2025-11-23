@@ -65,7 +65,6 @@ class BookingControllerTest {
                 "FL123", 5, "Jane Doe", "jane@example.com", Gender.FEMALE, MealType.NONVEG
         );
 
-        // Simulate same exception FlightService throws on insufficient seats
         Mockito.when(flightService.bookTicket(
                 Mockito.anyString(),
                 Mockito.anyInt(),

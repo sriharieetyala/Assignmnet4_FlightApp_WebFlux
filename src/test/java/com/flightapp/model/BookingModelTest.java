@@ -38,7 +38,6 @@ class BookingModelTest {
         assertEquals(BookingStatus.BOOKED, b.getStatus());
         assertEquals(now, b.getCreatedAt());
 
-        // toString should contain a few key pieces (Lombok-generated)
         String s = b.toString();
         assertTrue(s.contains("PNR123"));
         assertTrue(s.contains("Alice"));
