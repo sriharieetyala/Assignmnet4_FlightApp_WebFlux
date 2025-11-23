@@ -7,7 +7,7 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 public class GlobalErrorHandler {
 
@@ -20,7 +20,7 @@ public class GlobalErrorHandler {
             body.put("message", "validation failed");
             body.put("errors", ex.getFieldErrors().stream()
                     .map(e -> Map.of("field", e.getField(), "error", e.getDefaultMessage()))
-                    .collect(Collectors.toList()));
+                    .toList());
             return Mono.just(ResponseEntity.badRequest().body(body));
         }
 
