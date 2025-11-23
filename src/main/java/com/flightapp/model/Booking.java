@@ -1,5 +1,8 @@
 package com.flightapp.model;
 
+import com.flightapp.enums.BookingStatus;
+import com.flightapp.enums.Gender;
+import com.flightapp.enums.MealType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -27,8 +30,10 @@ public class Booking {
     // passenger info captured at booking time
     private String name;
     private String email;
-    private String gender;
-    private String mealPreference;
+    private Gender gender;
+    private MealType mealPreference;
+    private BookingStatus status;   // new field
+
 
     private Instant createdAt;
 }

@@ -1,6 +1,9 @@
 package com.flightapp.service;
 
 import com.flightapp.dto.repsonse.BookingResponse;
+import com.flightapp.enums.BookingStatus;
+import com.flightapp.enums.Gender;
+import com.flightapp.enums.MealType;
 import com.flightapp.model.Booking;
 import com.flightapp.model.Flight;
 import com.flightapp.repository.BookingRepository;
@@ -60,34 +63,36 @@ public class FlightService {
                                             int seats,
                                             String name,
                                             String email,
-                                            String gender,
-                                            String mealPreference) {
-
+                                            Gender gender,
+                                            MealType mealPreference) {
         return flightRepository.findById(flightId)
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Flight not found")))
                 .flatMap(flight -> {
                     if (flight.getAvailableSeats() < seats) {
                         return Mono.error(new IllegalStateException("Not enough seats"));
                     }
 
                     flight.setAvailableSeats(flight.getAvailableSeats() - seats);
+                    return flightRepository.save(flight)
+                            .flatMap(savedFlight -> {
+                                Booking booking = new Booking();
+                                booking.setPnr(generatePnr());
+                                booking.setFlightId(savedFlight.getId());
+                                booking.setSeatsBooked(seats);
+                                booking.setName(name);
+                                booking.setEmail(email);
 
-                    return flightRepository.save(flight);
+                                // now set enums directly
+                                booking.setGender(gender);
+                                booking.setMealPreference(mealPreference);
+                                booking.setCreatedAt(Instant.now());
+                                booking.setStatus(BookingStatus.BOOKED);
+
+                                return bookingRepository.save(booking)
+                                        .map(b -> new BookingResponse(b.getPnr()));
+                            });
                 })
-                .flatMap(savedFlight -> {
-                    Booking booking = new Booking();
-                    booking.setPnr(generatePnr());
-                    booking.setFlightId(savedFlight.getId());
-                    booking.setSeatsBooked(seats);
-                    booking.setName(name);
-                    booking.setEmail(email);
-                    booking.setGender(gender);
-                    booking.setMealPreference(mealPreference);
-                    booking.setCreatedAt(Instant.now());
-
-                    return bookingRepository.save(booking)
-                            .map(b -> new BookingResponse(b.getPnr()));
-                });
+                // don't pass null into defaultIfEmpty — use switchIfEmpty or flatMap/then
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Flight not found")));
     }
 
 

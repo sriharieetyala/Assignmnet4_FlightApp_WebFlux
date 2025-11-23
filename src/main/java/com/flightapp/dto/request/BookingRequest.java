@@ -1,5 +1,7 @@
 package com.flightapp.dto.request;
 
+import com.flightapp.enums.Gender;
+import com.flightapp.enums.MealType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -18,6 +20,7 @@ public class BookingRequest {
     // passenger details (basic)
     private String name;
     private String email;
-    private String gender;
-    private String mealPreference;
+    private Gender gender;
+    private MealType mealPreference;
+
 }
