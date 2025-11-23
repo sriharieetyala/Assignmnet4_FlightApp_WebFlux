@@ -66,10 +66,10 @@ public class FlightService {
                                             Gender gender,
                                             MealType mealPreference) {
         return flightRepository.findById(flightId)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Flight not found")))
                 .flatMap(flight -> {
-                    if (flight.getAvailableSeats() < seats) {
-                        return Mono.error(new IllegalStateException("Not enough seats"));
-                    }
+                    if (seats <= 0) return Mono.error(new IllegalArgumentException("seats must be > 0"));
+                    if (flight.getAvailableSeats() < seats) return Mono.error(new IllegalStateException("Not enough seats"));
 
                     flight.setAvailableSeats(flight.getAvailableSeats() - seats);
                     return flightRepository.save(flight)
