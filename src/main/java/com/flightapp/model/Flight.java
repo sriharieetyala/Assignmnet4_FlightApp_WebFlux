@@ -1,4 +1,4 @@
-package com.Flightapp.model;
+package com.flightapp.model;
 // lombok imports
 import lombok.AllArgsConstructor;
 import lombok.Data;

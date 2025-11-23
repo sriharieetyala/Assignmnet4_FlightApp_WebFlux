@@ -1,4 +1,4 @@
-package com.Flightapp.dto.repsonse;
+package com.flightapp.dto.repsonse;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
