@@ -33,7 +33,7 @@ public class FlightService {
     }
 
 
-
+// to check for duplicates
     public Mono<Boolean> existsByFlightNumber(String flightNumber) {
         return flightRepository.findByFlightNumber(flightNumber)
                 .map(f -> true)
@@ -91,7 +91,7 @@ public class FlightService {
                                         .map(b -> new BookingResponse(b.getPnr()));
                             });
                 })
-                // don't pass null into defaultIfEmpty — use switchIfEmpty or flatMap/then
+
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Flight not found")));
     }
 

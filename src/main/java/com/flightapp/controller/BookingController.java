@@ -5,6 +5,7 @@ import com.flightapp.dto.repsonse.BookingResponse;
 import com.flightapp.model.Booking;
 import com.flightapp.service.BookingService;
 import com.flightapp.service.FlightService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ public class BookingController {
 
     // POST book ticket -> returns { "pnr": "ABC123" } with 201, or { "message": "..." } with 400
     @PostMapping("/inventory/book")
-    public Mono<ResponseEntity<Map<String, String>>> bookTicket(@RequestBody BookingRequest req) {
+    public Mono<ResponseEntity<Map<String, String>>> bookTicket(@Valid @RequestBody BookingRequest req) {
         return flightService.bookTicket(
                         req.getFlightId(),
                         req.getSeats(),
