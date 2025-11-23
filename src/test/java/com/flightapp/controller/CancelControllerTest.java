@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.ArgumentMatchers.anyString;
+import java.util.NoSuchElementException;
+
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(controllers = CancelController.class)
@@ -34,7 +34,9 @@ class CancelControllerTest {
 
     @Test
     void cancelBooking_pnrNotFound_returns404() {
-        when(cancelService.cancelBooking("NOPE")).thenReturn(Mono.error(new IllegalArgumentException("PNR not found")));
+        // <-- changed to NoSuchElementException so global handler returns 404
+        when(cancelService.cancelBooking("NOPE"))
+                .thenReturn(Mono.error(new NoSuchElementException("PNR not found")));
 
         web.delete().uri("/api/flight/airline/inventory/booking/NOPE")
                 .exchange()
@@ -45,7 +47,8 @@ class CancelControllerTest {
 
     @Test
     void cancelBooking_badBusinessRule_returns400() {
-        when(cancelService.cancelBooking("LATE")).thenReturn(Mono.error(new IllegalStateException("Cannot cancel within 24 hours")));
+        when(cancelService.cancelBooking("LATE"))
+                .thenReturn(Mono.error(new IllegalStateException("Cannot cancel within 24 hours")));
 
         web.delete().uri("/api/flight/airline/inventory/booking/LATE")
                 .exchange()

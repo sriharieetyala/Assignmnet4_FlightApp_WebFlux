@@ -1,8 +1,6 @@
 package com.flightapp.controller;
 
 import com.flightapp.dto.request.BookingRequest;
-import com.flightapp.dto.repsonse.BookingResponse;
-import com.flightapp.model.Booking;
 import com.flightapp.service.BookingService;
 import com.flightapp.service.FlightService;
 import jakarta.validation.Valid;
@@ -20,12 +18,16 @@ import java.util.Map;
 public class BookingController {
 
     @Autowired
-    private FlightService flightService; // used for booking helper that lives in FlightService (if applicable)
+    private FlightService flightService;
 
     @Autowired
     private BookingService bookingService;
 
-    // POST book ticket -> returns { "pnr": "ABC123" } with 201, or { "message": "..." } with 400
+    /**
+     * Book ticket
+     * - returns 201 + { "pnr": "ABC123" } on success
+     * - validation errors and business errors are handled by GlobalErrorHandler
+     */
     @PostMapping("/inventory/book")
     public Mono<ResponseEntity<Map<String, String>>> bookTicket(@Valid @RequestBody BookingRequest req) {
         return flightService.bookTicket(
@@ -34,50 +36,34 @@ public class BookingController {
                         req.getName(),
                         req.getEmail(),
                         req.getGender(),
-                        req.getMealPreference())
-                .flatMap(br -> {
+                        req.getMealPreference()
+                )
+                .map(br -> {
                     Map<String, String> body = new HashMap<>();
                     body.put("pnr", br.getPnr());
-                    return Mono.just(ResponseEntity.status(HttpStatus.CREATED).body(body));
-                })
-                .onErrorResume(err -> {
-                    Map<String, String> body = new HashMap<>();
-                    body.put("message", err.getMessage() != null ? err.getMessage() : "error");
-                    return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(body));
+                    return ResponseEntity.status(HttpStatus.CREATED).body(body);
                 });
+        // no onErrorResume here — let global handler convert exceptions to proper HTTP codes
     }
 
-    // GET booking by PNR -> returns booking JSON or 404, 400 on error
-    @GetMapping(value = "/inventory/booking/{pnr}", produces = "application/json")
-    public Mono<ResponseEntity<Object>> getBookingByPnr(@PathVariable String pnr) {
-        return bookingService.getBookingByPnr(pnr)
-                .map(b -> ResponseEntity.ok((Object) b))
-                .defaultIfEmpty(ResponseEntity.notFound().build())
-                .onErrorResume(err -> {
-                    Map<String, String> body = new HashMap<>();
-                    body.put("message", err.getMessage() != null ? err.getMessage() : "error");
-                    return Mono.just(ResponseEntity.badRequest().body((Object) body));
-                });
-    }
-
-
-
+    /**
+     * Get booking history by email
+     * - returns 200 with list or 404 if no bookings found
+     */
     @GetMapping("/inventory/bookings")
     public Mono<ResponseEntity<Object>> getBookingHistory(@RequestParam String email) {
-
         return bookingService.getBookingHistoryByEmail(email)
-                .collectList()                                     // turn Flux → Mono<List>
+                .collectList()
                 .flatMap(list -> {
                     if (list.isEmpty()) {
                         return Mono.just(ResponseEntity.notFound().build());
                     }
                     return Mono.just(ResponseEntity.ok((Object) list));
-                })
-                .onErrorResume(err -> {
-                    Map<String, String> body = new HashMap<>();
-                    body.put("message", err.getMessage());
-                    return Mono.just(ResponseEntity.badRequest().body((Object) body));
                 });
+        // again no local onErrorResume — global handler will manage errors
     }
 
+    /**
+     * (You already have a PNR lookup elsewhere; keep it there.)
+     */
 }

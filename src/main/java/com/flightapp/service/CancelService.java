@@ -1,7 +1,6 @@
 package com.flightapp.service;
 
 import com.flightapp.model.Booking;
-import com.flightapp.model.Flight;
 import com.flightapp.repository.BookingRepository;
 import com.flightapp.repository.FlightRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +9,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.NoSuchElementException;
 
 @Service
 public class CancelService {
@@ -45,6 +45,7 @@ public class CancelService {
                             .then(bookingRepository.delete(booking))
                             .thenReturn("Booking cancelled");
                 })
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("PNR not found")));
+                // IMPORTANT: throw NoSuchElementException so global handler returns 404
+                .switchIfEmpty(Mono.error(new NoSuchElementException("PNR not found")));
     }
 }

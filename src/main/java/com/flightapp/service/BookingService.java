@@ -13,15 +13,12 @@ public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
 
-    // return booking by its PNR
     public Mono<Booking> getBookingByPnr(String pnr) {
+        // left as-is: returns Mono.empty() if not found. Controller can defaultIfEmpty(...)
         return bookingRepository.findByPnr(pnr);
     }
-    // return booking by its Email
+
     public Flux<Booking> getBookingHistoryByEmail(String email) {
         return bookingRepository.findByEmail(email);
     }
-
-
-
 }

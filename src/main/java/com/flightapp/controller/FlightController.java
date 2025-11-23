@@ -14,6 +14,11 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Flight inventory endpoints.
+ * Kept controller focused on mapping request -> service -> response.
+ * Error responses are handled by GlobalErrorHandler.
+ */
 @RestController
 @RequestMapping("/api/flight/airline")
 public class FlightController {
