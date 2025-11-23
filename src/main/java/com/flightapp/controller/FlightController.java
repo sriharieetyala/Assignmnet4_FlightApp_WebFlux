@@ -2,6 +2,8 @@ package com.flightapp.controller;
 
 import com.flightapp.dto.repsonse.AddFlightResponse;
 import com.flightapp.dto.request.AddFlightRequest;
+import com.flightapp.dto.request.BookingRequest;
+import com.flightapp.model.Booking;
 import com.flightapp.model.Flight;
 import com.flightapp.service.FlightService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,4 +83,30 @@ public class FlightController {
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
 }
+
+    @PostMapping("/inventory/book")
+    public Mono<ResponseEntity<Map<String,String>>> bookTicket(@RequestBody BookingRequest req) {
+        return flightService.bookTicket(
+                        req.getFlightId(),
+                        req.getSeats(),
+                        req.getName(),
+                        req.getEmail(),
+                        req.getGender(),
+                        req.getMealPreference()
+                )
+                .flatMap(br -> {
+                    Map<String,String> body = new HashMap<>();
+                    body.put("pnr", br.getPnr());            // only pnr as requested
+                    return Mono.just(ResponseEntity.status(HttpStatus.CREATED).body(body));
+                })
+                .onErrorResume(err -> {
+                    Map<String, String> body = new HashMap<>();
+                    body.put("message", err.getMessage());   // simple error message
+                    return Mono.just(ResponseEntity.badRequest().body(body));
+                });
+    }
+
 }
+
+
+
