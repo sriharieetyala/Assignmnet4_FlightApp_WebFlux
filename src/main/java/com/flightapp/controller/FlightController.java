@@ -4,19 +4,19 @@ import com.flightapp.dto.request.AddFlightRequest;
 import com.flightapp.dto.repsonse.AddFlightResponse;
 import com.flightapp.model.Flight;
 import com.flightapp.service.FlightService;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
+import java.util.Set;
 
-/*
- Controller: readable validation that returns Mono.error(...) with clear messages.
- GlobalErrorHandler will convert those to JSON { "message": "..." } and correct HTTP code.
- */
+@Validated
 @RestController
 @RequestMapping("/api/flight/airline/inventory")
 public class FlightController {
@@ -24,39 +24,44 @@ public class FlightController {
     @Autowired
     private FlightService flightService;
 
+    @Autowired
+    private Validator validator; // injected by Spring Boot
+
+    /**
+     * Create flight inventory.
+     * - Validates bean constraints (@Valid + programmatic check to ensure clear message)
+     * - Checks duplicate flight number via service
+     * - Business checks: positive seats/price, arrival after departure
+     */
     @PostMapping
-    @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-    public Mono<AddFlightResponse> addInventory(@RequestBody AddFlightRequest req) {
-        // existence check first (tests mock this)
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<AddFlightResponse> addInventory(@Valid @RequestBody AddFlightRequest req) {
+
         return flightService.existsByFlightNumber(req.getFlightNumber())
                 .flatMap(exists -> {
                     if (exists) {
                         return Mono.error(new IllegalArgumentException("flight already exists"));
                     }
 
-                    // basic checks
-                    if (req.getTotalSeats() <= 0) {
-                        return Mono.error(new IllegalArgumentException("totalSeats must be > 0"));
-                    }
-                    if (req.getPrice() <= 0) {
-                        return Mono.error(new IllegalArgumentException("price must be > 0"));
+                    // programmatic bean validation (keeps message style consistent)
+                    Set<ConstraintViolation<AddFlightRequest>> violations = validator.validate(req);
+                    if (!violations.isEmpty()) {
+                        ConstraintViolation<AddFlightRequest> v = violations.iterator().next();
+                        String msg = v.getPropertyPath() + " " + v.getMessage();
+                        return Mono.error(new IllegalArgumentException(msg));
                     }
 
-                    // parse departure/arrival flexibly
-                    Instant depInstant = null;
-                    Instant arrInstant = null;
+                    // additional business checks (arrival after departure)
                     try {
-                        if (req.getDepartureDateTime() != null) {
-                            depInstant = parseToInstant(req.getDepartureDateTime());
+                        if (req.getDepartureDateTime() != null && req.getArrivalDateTime() != null) {
+                            java.time.Instant dep = java.time.Instant.parse(req.getDepartureDateTime());
+                            java.time.Instant arr = java.time.Instant.parse(req.getArrivalDateTime());
+                            if (!arr.isAfter(dep)) {
+                                return Mono.error(new IllegalArgumentException("arrival must be after departure"));
+                            }
+                        } else {
+                            return Mono.error(new IllegalArgumentException("invalid departure/arrival datetime"));
                         }
-                        if (req.getArrivalDateTime() != null) {
-                            arrInstant = parseToInstant(req.getArrivalDateTime());
-                        }
-                        if (depInstant != null && arrInstant != null && !arrInstant.isAfter(depInstant)) {
-                            return Mono.error(new IllegalArgumentException("arrival must be after departure"));
-                        }
-                    } catch (IllegalArgumentException iae) {
-                        return Mono.error(iae);
                     } catch (Exception e) {
                         return Mono.error(new IllegalArgumentException("invalid departure/arrival datetime"));
                     }
@@ -70,10 +75,7 @@ public class FlightController {
                     f.setArrivalDateTime(req.getArrivalDateTime());
                     f.setPrice(req.getPrice());
                     f.setTotalSeats(req.getTotalSeats());
-
-                    // set availableSeats from totalSeats for a new flight
-                    f.setAvailableSeats(req.getTotalSeats());
-
+                    f.setAvailableSeats(req.getTotalSeats()); // initial available seats = total
                     f.setAircraft(req.getAircraft());
 
                     return flightService.createFlight(f)
@@ -81,39 +83,36 @@ public class FlightController {
                 });
     }
 
+    /**
+     * List all flights
+     * GET /api/flight/airline/inventory
+     */
     @GetMapping
-    public reactor.core.publisher.Flux<Flight> listAll() {
+    public Flux<Flight> listAll() {
         return flightService.getAllFlights();
     }
 
+    /**
+     * Get flight by id
+     * GET /api/flight/airline/inventory/{id}
+     * returns 404 via GlobalErrorHandler if not found (service returns Mono.empty())
+     */
     @GetMapping("/{id}")
     public Mono<Flight> getById(@PathVariable String id) {
         return flightService.getFlightById(id)
                 .switchIfEmpty(Mono.error(new java.util.NoSuchElementException("flight not found")));
     }
 
-    @GetMapping("/search")
-    public Mono<Flight> searchByFlightNumber(@RequestParam String flightNumber) {
+    /**
+     * Search by flight number
+     * GET /api/flight/airline/inventory/search?flightNumber=XYZ
+     */
+
+    // add to FlightController
+    @GetMapping(params = "flightNumber")
+    public Mono<Flight> searchByFlightNumberParam(@RequestParam String flightNumber) {
         return flightService.findByFlightNumberMono(flightNumber)
                 .switchIfEmpty(Mono.error(new java.util.NoSuchElementException("flight not found")));
     }
 
-    // Accepts either Instant.parse("...Z") or LocalDateTime like "2025-12-10T09:00:00"
-    private Instant parseToInstant(String value) {
-        try {
-            // try strict instant first (with Z or offset)
-            return Instant.parse(value);
-        } catch (DateTimeParseException ignored) {
-        }
-
-        try {
-            // try local date-time, assume UTC (tests are not timezone-sensitive)
-            LocalDateTime ldt = LocalDateTime.parse(value);
-            return ldt.toInstant(ZoneOffset.UTC);
-        } catch (DateTimeParseException ignored) {
-        }
-
-        // no known format
-        throw new IllegalArgumentException("unparseable datetime: " + value);
-    }
 }

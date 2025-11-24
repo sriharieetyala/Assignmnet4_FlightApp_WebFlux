@@ -13,12 +13,20 @@ public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
 
+    /**
+     * Return a single booking by PNR. If not found the Mono will be empty.
+     * Tests expect Mono.empty() when not found.
+     */
     public Mono<Booking> getBookingByPnr(String pnr) {
-        // left as-is: returns Mono.empty() if not found. Controller can defaultIfEmpty(...)
         return bookingRepository.findByPnr(pnr);
     }
 
+    /**
+     * Return booking history by email. If none found returns empty Flux.
+     */
     public Flux<Booking> getBookingHistoryByEmail(String email) {
         return bookingRepository.findByEmail(email);
     }
+
+    // keep your existing booking/other methods (book/cancel) below or above
 }

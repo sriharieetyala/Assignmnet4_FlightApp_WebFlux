@@ -1,48 +1,38 @@
 package com.flightapp.dto.request;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/*
- I used Lombok so getters/setters/ctors are clean and short.
- Basic validation annotations so controller can reject bad input quickly.
- City names should be real (I used Chennai/Bengaluru examples in tests).
-*/
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddFlightRequest {
-
-    @NotBlank
+    @NotBlank(message = "airline must not be blank")
     private String airline;
 
-    @NotBlank
+    @NotBlank(message = "flightNumber must not be blank")
     private String flightNumber;
 
-    @NotBlank
+    @NotBlank(message = "fromPlace must not be blank")
     private String fromPlace;
 
-    @NotBlank
+    @NotBlank(message = "toPlace must not be blank")
     private String toPlace;
 
-    @NotBlank
-    private String departureDateTime; // ISO-8601 string expected, e.g. 2025-12-01T10:00:00Z
+    @NotBlank(message = "departureDateTime must not be blank")
+    private String departureDateTime;
 
-    @NotBlank
-    private String arrivalDateTime;   // ISO-8601 string expected
+    @NotBlank(message = "arrivalDateTime must not be blank")
+    private String arrivalDateTime;
 
-    @NotNull
-    @Positive
+    @Positive(message = "price must be > 0")
     private Float price;
 
-    @Min(1)
+    @Positive(message = "totalSeats must be > 0")
     private Integer totalSeats;
 
-    @NotBlank
+    @NotBlank(message = "aircraft must not be blank")
     private String aircraft;
 }

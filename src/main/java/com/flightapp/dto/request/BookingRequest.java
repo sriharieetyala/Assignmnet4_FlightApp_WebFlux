@@ -3,33 +3,29 @@ package com.flightapp.dto.request;
 import com.flightapp.enums.Gender;
 import com.flightapp.enums.MealType;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
-/**
- * Simple request DTO for booking.
- * Contains passenger info and ref to flight.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingRequest {
-    @NotBlank(message = "flightId is required")
+    @NotBlank(message = "flightId must not be blank")
     private String flightId;
 
-    @Min(value = 1, message = "seats must be at least 1")
+    @Min(value = 1, message = "seats must be >= 1")
     private int seats;
 
-    @NotBlank(message = "name is required")
+    @NotBlank(message = "name must not be blank")
     private String name;
 
-    @Email(message = "invalid email")
+    @Email(message = "email must be valid")
     private String email;
 
-    @NotNull(message = "gender is required")
+    @NotNull(message = "gender must not be null")
     private Gender gender;
 
-    @NotNull(message = "mealPreference is required")
+    @NotNull(message = "mealPreference must not be null")
     private MealType mealPreference;
 }
