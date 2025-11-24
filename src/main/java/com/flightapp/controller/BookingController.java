@@ -1,69 +1,52 @@
 package com.flightapp.controller;
 
+import com.flightapp.dto.repsonse.BookingResponse;
 import com.flightapp.dto.request.BookingRequest;
+import com.flightapp.enums.Gender;
+import com.flightapp.enums.MealType;
 import com.flightapp.service.BookingService;
 import com.flightapp.service.FlightService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
-import java.util.Map;
+import jakarta.validation.Valid;
 
+/*
+ I keep controller small and do only common-sense validation here:
+  - seats must be > 0
+  - email/name basic non-empty etc come from @Valid on DTO
+  - service still does authoritative checks (available seats etc)
+*/
 @RestController
-@RequestMapping("/api/flight/airline")
+@RequestMapping("/api/flight/airline/inventory")
+@Validated
 public class BookingController {
 
     @Autowired
-    private FlightService flightService;
+    private FlightService flightService; // your service generates PNR and does booking
 
     @Autowired
-    private BookingService bookingService;
+    private BookingService bookingService; // kept for any read actions (not used here necessarily)
 
-    /**
-     * Book ticket
-     * - returns 201 + { "pnr": "ABC123" } on success
-     * - validation errors and business errors are handled by GlobalErrorHandler
-     */
-    @PostMapping("/inventory/book")
-    public Mono<ResponseEntity<Map<String, String>>> bookTicket(@Valid @RequestBody BookingRequest req) {
+    @PostMapping("/book")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<BookingResponse> bookTicket(@Valid @RequestBody BookingRequest req) {
+        // common-sense check early to produce 400 for bad input (tests expect 400)
+        if (req.getSeats() <= 0) {
+            return Mono.error(new IllegalArgumentException("seats must be > 0"));
+        }
+        // delegate to FlightService. FlightService will throw IllegalStateException when seats insufficient,
+        // which GlobalErrorHandler maps to 400.
         return flightService.bookTicket(
-                        req.getFlightId(),
-                        req.getSeats(),
-                        req.getName(),
-                        req.getEmail(),
-                        req.getGender(),
-                        req.getMealPreference()
-                )
-                .map(br -> {
-                    Map<String, String> body = new HashMap<>();
-                    body.put("pnr", br.getPnr());
-                    return ResponseEntity.status(HttpStatus.CREATED).body(body);
-                });
-        // no onErrorResume here — let global handler convert exceptions to proper HTTP codes
+                req.getFlightId(),
+                req.getSeats(),
+                req.getName(),
+                req.getEmail(),
+                req.getGender(),
+                req.getMealPreference()
+        );
     }
-
-    /**
-     * Get booking history by email
-     * - returns 200 with list or 404 if no bookings found
-     */
-    @GetMapping("/inventory/bookings")
-    public Mono<ResponseEntity<Object>> getBookingHistory(@RequestParam String email) {
-        return bookingService.getBookingHistoryByEmail(email)
-                .collectList()
-                .flatMap(list -> {
-                    if (list.isEmpty()) {
-                        return Mono.just(ResponseEntity.notFound().build());
-                    }
-                    return Mono.just(ResponseEntity.ok((Object) list));
-                });
-        // again no local onErrorResume — global handler will manage errors
-    }
-
-    /**
-     * (You already have a PNR lookup elsewhere; keep it there.)
-     */
 }

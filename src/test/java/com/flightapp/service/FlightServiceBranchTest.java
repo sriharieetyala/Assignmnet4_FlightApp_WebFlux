@@ -18,6 +18,10 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * These tests cover edge branches and use argument captors to make sure we saved correct things.
+ * I use small, clear flight examples that sound local — Hyderabad, Chennai etc.
+ */
 class FlightServiceBranchTest {
 
     FlightService flightService;
@@ -36,6 +40,7 @@ class FlightServiceBranchTest {
 
     @Test
     void createFlight_setsAvailableSeats_whenZero() {
+        // I check that when totalSeats is set but availableSeats is zero, service initializes availableSeats.
         Flight f = new Flight();
         f.setTotalSeats(50);
         f.setAvailableSeats(0);
@@ -43,6 +48,7 @@ class FlightServiceBranchTest {
         Flight saved = new Flight();
         saved.setId("id1");
         saved.setAvailableSeats(50);
+
         Mockito.when(flightRepository.save(Mockito.any(Flight.class))).thenReturn(Mono.just(saved));
 
         StepVerifier.create(flightService.createFlight(f))
@@ -51,11 +57,12 @@ class FlightServiceBranchTest {
 
         ArgumentCaptor<Flight> cap = ArgumentCaptor.forClass(Flight.class);
         Mockito.verify(flightRepository).save(cap.capture());
-        assertEquals(50, cap.getValue().getAvailableSeats());
+        assertEquals(50, cap.getValue().getAvailableSeats(), "I expect availableSeats to be set to totalSeats when previously zero");
     }
 
     @Test
     void existsByFlightNumber_trueAndFalse() {
+        // I ensure existsByFlightNumber maps repo result to boolean properly.
         Mockito.when(flightRepository.findByFlightNumber("FN1")).thenReturn(Mono.just(new Flight()));
         Mockito.when(flightRepository.findByFlightNumber("MISSING")).thenReturn(Mono.empty());
 
@@ -70,6 +77,7 @@ class FlightServiceBranchTest {
 
     @Test
     void getAllFlights_delegatesToRepo() {
+        // Basic delegation test — repo returns 1 flight and service forwards it.
         Flight f1 = new Flight();
         f1.setId("f1");
         Mockito.when(flightRepository.findAll()).thenReturn(Flux.just(f1));
@@ -81,6 +89,7 @@ class FlightServiceBranchTest {
 
     @Test
     void bookTicket_flightNotFound_throwsNoSuchElement() {
+        // If findById returns empty, the service should fail loudly.
         Mockito.when(flightRepository.findById("bad")).thenReturn(Mono.empty());
 
         StepVerifier.create(flightService.bookTicket("bad", 1, "n", "e", null, null))
@@ -90,6 +99,7 @@ class FlightServiceBranchTest {
 
     @Test
     void bookTicket_invalidSeats_throwsIllegalArgument() {
+        // seats must be >= 1; I check invalid input path
         Flight f = new Flight();
         f.setId("f1");
         f.setAvailableSeats(10);
@@ -102,6 +112,7 @@ class FlightServiceBranchTest {
 
     @Test
     void bookTicket_notEnoughSeats_throwsIllegalState() {
+        // Not enough seats branch triggers IllegalStateException
         Flight f = new Flight();
         f.setId("f2");
         f.setAvailableSeats(2);
@@ -114,6 +125,7 @@ class FlightServiceBranchTest {
 
     @Test
     void bookTicket_success_updatesFlightAndSavesBooking() {
+        // Full happy path: flight available, saving both updated flight and booking should be called with correct values.
         Flight f = new Flight();
         f.setId("f3");
         f.setAvailableSeats(5);
@@ -137,11 +149,11 @@ class FlightServiceBranchTest {
 
         ArgumentCaptor<Flight> capF = ArgumentCaptor.forClass(Flight.class);
         Mockito.verify(flightRepository).save(capF.capture());
-        assertEquals(3, capF.getValue().getAvailableSeats());
+        assertEquals(3, capF.getValue().getAvailableSeats(), "After booking 2 seats, available should drop by 2");
 
         ArgumentCaptor<Booking> capB = ArgumentCaptor.forClass(Booking.class);
         Mockito.verify(bookingRepository).save(capB.capture());
-        assertEquals(2, capB.getValue().getSeatsBooked());
-        assertEquals("f3", capB.getValue().getFlightId());
+        assertEquals(2, capB.getValue().getSeatsBooked(), "Booking record should store the seats booked");
+        assertEquals("f3", capB.getValue().getFlightId(), "Booking should reference correct flight id");
     }
 }

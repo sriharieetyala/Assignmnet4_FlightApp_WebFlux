@@ -1,13 +1,15 @@
 package com.flightapp.controller;
 
-import com.flightapp.dto.request.AddFlightRequest;
-import com.flightapp.dto.repsonse.AddFlightResponse;
+import com.flightapp.exception.GlobalErrorHandler;
 import com.flightapp.model.Flight;
+import com.flightapp.dto.request.AddFlightRequest;
 import com.flightapp.service.FlightService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
@@ -15,8 +17,12 @@ import reactor.core.publisher.Mono;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import com.flightapp.exception.GlobalErrorHandler;
+
 
 @WebFluxTest(controllers = FlightController.class)
+@AutoConfigureWebTestClient
+@Import(GlobalErrorHandler.class)
 class FlightControllerTest {
 
     @Autowired
@@ -28,16 +34,16 @@ class FlightControllerTest {
     @Test
     void addInventory_duplicateFlight_returns400() {
         AddFlightRequest req = new AddFlightRequest();
-        req.setAirline("A");
-        req.setFlightNumber("F1");
-        req.setFromPlace("X");
-        req.setToPlace("Y");
+        req.setAirline("Indigo");
+        req.setFlightNumber("FHYD1");
+        req.setFromPlace("Hyderabad");
+        req.setToPlace("Chennai");
         req.setDepartureDateTime("2025-12-01T10:00:00");
         req.setArrivalDateTime("2025-12-01T12:00:00");
-        req.setPrice(100f);
-        req.setTotalSeats(100);
+        req.setPrice(5000f);
+        req.setTotalSeats(150);
 
-        when(flightService.existsByFlightNumber("F1")).thenReturn(Mono.just(true));
+        when(flightService.existsByFlightNumber("FHYD1")).thenReturn(Mono.just(true));
 
         web.post().uri("/api/flight/airline/inventory")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -51,19 +57,19 @@ class FlightControllerTest {
     @Test
     void addInventory_success_returns201() {
         AddFlightRequest req = new AddFlightRequest();
-        req.setAirline("A");
-        req.setFlightNumber("F2");
-        req.setFromPlace("X");
-        req.setToPlace("Y");
-        req.setDepartureDateTime("2025-12-01T10:00:00");
-        req.setArrivalDateTime("2025-12-01T12:00:00");
-        req.setPrice(150f);
-        req.setTotalSeats(100);
+        req.setAirline("AirIndia");
+        req.setFlightNumber("FMUM1");
+        req.setFromPlace("Mumbai");
+        req.setToPlace("Bengaluru");
+        req.setDepartureDateTime("2025-12-10T09:00:00");
+        req.setArrivalDateTime("2025-12-10T10:30:00");
+        req.setPrice(3000f);
+        req.setTotalSeats(180);
 
         Flight saved = new Flight();
-        saved.setId("id123");
+        saved.setId("id-mum-001");
 
-        when(flightService.existsByFlightNumber("F2")).thenReturn(Mono.just(false));
+        when(flightService.existsByFlightNumber("FMUM1")).thenReturn(Mono.just(false));
         when(flightService.createFlight(any(Flight.class))).thenReturn(Mono.just(saved));
 
         web.post().uri("/api/flight/airline/inventory")
@@ -72,13 +78,13 @@ class FlightControllerTest {
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody()
-                .jsonPath("$.id").isEqualTo("id123");
+                .jsonPath("$.id").isEqualTo("id-mum-001");
     }
 
     @Test
     void listAllFlights_returnsFlux() {
-        Flight f1 = new Flight(); f1.setId("1"); f1.setFlightNumber("A1");
-        Flight f2 = new Flight(); f2.setId("2"); f2.setFlightNumber("B2");
+        Flight f1 = new Flight(); f1.setId("1"); f1.setFlightNumber("DEL-HYD-1");
+        Flight f2 = new Flight(); f2.setId("2"); f2.setFlightNumber("MAA-BLR-2");
 
         when(flightService.getAllFlights()).thenReturn(Flux.just(f1, f2));
 
@@ -91,7 +97,7 @@ class FlightControllerTest {
 
     @Test
     void getFlightById_found_returns200() {
-        Flight f = new Flight(); f.setId("1"); f.setFlightNumber("A1");
+        Flight f = new Flight(); f.setId("1"); f.setFlightNumber("DEL-101");
 
         when(flightService.getFlightById("1")).thenReturn(Mono.just(f));
 

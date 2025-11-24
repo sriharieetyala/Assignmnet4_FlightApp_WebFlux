@@ -10,10 +10,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.time.Instant;
-
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * I keep tests small and practical for BookingService.
+ * These are simple, real-life checks: history empty vs non-empty and lookups by PNR.
+ */
 class BookingServiceAdditionalTest {
 
     BookingService bookingService;
@@ -28,6 +30,7 @@ class BookingServiceAdditionalTest {
 
     @Test
     void getBookingByPnr_returnsMonoEmptyWhenNotFound() {
+        // If repo returns empty, service should expose Mono.empty()
         Mockito.when(bookingRepository.findByPnr("none")).thenReturn(Mono.empty());
 
         StepVerifier.create(bookingService.getBookingByPnr("none"))
@@ -36,7 +39,8 @@ class BookingServiceAdditionalTest {
     }
 
     @Test
-    void getBookingByPnr_returnsBooking() {
+    void getBookingByPnr_returnsBooking_whenPresent() {
+        // Simple success path for findByPnr
         Booking b = new Booking();
         b.setPnr("PNR99");
         Mockito.when(bookingRepository.findByPnr("PNR99")).thenReturn(Mono.just(b));
@@ -48,6 +52,7 @@ class BookingServiceAdditionalTest {
 
     @Test
     void getBookingHistoryByEmail_emptyAndNonEmpty() {
+        // I check both empty and non-empty histories — common-sense behaviour.
         Mockito.when(bookingRepository.findByEmail("a@x.com")).thenReturn(Flux.empty());
         StepVerifier.create(bookingService.getBookingHistoryByEmail("a@x.com").collectList())
                 .expectNextMatches(list -> list.isEmpty())

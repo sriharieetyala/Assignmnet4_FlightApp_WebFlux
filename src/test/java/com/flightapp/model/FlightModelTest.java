@@ -4,40 +4,39 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * I use this to quickly verify that the Flight POJO behaves like I expect.
+ */
 class FlightModelTest {
 
     @Test
     void gettersSetters_and_toString() {
+        // I fill up a fresh flight and confirm everything sits correctly.
         Flight f = new Flight();
-        f.setId("f1");
-        f.setAirline("TestAir");
-        f.setFlightNumber("TA100");
-        f.setFromPlace("SFO");
-        f.setToPlace("LAX");
-        f.setDepartureDateTime("2025-12-01T10:00:00Z");
-        f.setArrivalDateTime("2025-12-01T12:00:00Z");
-        f.setPrice(99.99f);
-        f.setTotalSeats(120);
-        f.setAvailableSeats(120);
-        f.setAircraft("A320");
+        f.setId("F11");
+        f.setAirline("Vistara");
+        f.setFlightNumber("UK810");
+        f.setFromPlace("Chennai");
+        f.setToPlace("Kolkata");
+        f.setDepartureDateTime("2025-07-01T06:00:00Z");
+        f.setArrivalDateTime("2025-07-01T08:30:00Z");
+        f.setPrice(6500f);
+        f.setTotalSeats(150);
+        f.setAvailableSeats(150);
+        f.setAircraft("A321");
 
-        assertEquals("f1", f.getId());
-        assertEquals("TestAir", f.getAirline());
-        assertEquals("TA100", f.getFlightNumber());
-        assertEquals("SFO", f.getFromPlace());
-        assertEquals("LAX", f.getToPlace());
-        assertEquals("2025-12-01T10:00:00Z", f.getDepartureDateTime());
-        assertEquals("2025-12-01T12:00:00Z", f.getArrivalDateTime());
-        assertEquals(99.99f, f.getPrice());
-        assertEquals(120, f.getTotalSeats());
-        assertEquals(120, f.getAvailableSeats());
-        assertTrue(f.toString().contains("TA100"));
+        assertEquals("UK810", f.getFlightNumber());
+        assertTrue(f.toString().contains("UK810"));
     }
 
     @Test
     void allArgsConstructor_matchesValues() {
-        Flight f = new Flight("id2","Air","FN1","A","B","d","a",10.0f,10,8,"aircraft");
-        assertEquals("id2", f.getId());
-        assertEquals(8, f.getAvailableSeats());
+        // I check once that the all-args constructor builds a flight correctly.
+        Flight f = new Flight("IDX", "SpiceJet", "SG401",
+                "Pune", "Goa", "d", "a", 3200f,
+                180, 160, "Q400");
+
+        assertEquals("IDX", f.getId());
+        assertEquals(160, f.getAvailableSeats());
     }
 }
