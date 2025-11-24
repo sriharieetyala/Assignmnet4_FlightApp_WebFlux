@@ -22,28 +22,23 @@ import java.util.Set;
 public class FlightController {
 
     @Autowired
-    private FlightService flightService;
+    private FlightService flightService; // I added this to call all flight related service work
 
     @Autowired
-    private Validator validator; // injected by Spring Boot
+    private Validator validator; // I added this to check request fields before saving
 
-    /**
-     * Create flight inventory.
-     * - Validates bean constraints (@Valid + programmatic check to ensure clear message)
-     * - Checks duplicate flight number via service
-     * - Business checks: positive seats/price, arrival after departure
-     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<AddFlightResponse> addInventory(@Valid @RequestBody AddFlightRequest req) {
 
+        // I am first checking if flight number is already present
         return flightService.existsByFlightNumber(req.getFlightNumber())
                 .flatMap(exists -> {
                     if (exists) {
                         return Mono.error(new IllegalArgumentException("flight already exists"));
                     }
 
-                    // programmatic bean validation (keeps message style consistent)
+                    // I am doing extra validation to show clear message if request has wrong data
                     Set<ConstraintViolation<AddFlightRequest>> violations = validator.validate(req);
                     if (!violations.isEmpty()) {
                         ConstraintViolation<AddFlightRequest> v = violations.iterator().next();
@@ -51,7 +46,7 @@ public class FlightController {
                         return Mono.error(new IllegalArgumentException(msg));
                     }
 
-                    // additional business checks (arrival after departure)
+                    // I am checking that arrival time should be after departure time
                     try {
                         if (req.getDepartureDateTime() != null && req.getArrivalDateTime() != null) {
                             java.time.Instant dep = java.time.Instant.parse(req.getDepartureDateTime());
@@ -66,6 +61,7 @@ public class FlightController {
                         return Mono.error(new IllegalArgumentException("invalid departure/arrival datetime"));
                     }
 
+                    // I am creating flight object and copying all fields into it
                     Flight f = new Flight();
                     f.setAirline(req.getAirline());
                     f.setFlightNumber(req.getFlightNumber());
@@ -75,42 +71,31 @@ public class FlightController {
                     f.setArrivalDateTime(req.getArrivalDateTime());
                     f.setPrice(req.getPrice());
                     f.setTotalSeats(req.getTotalSeats());
-                    f.setAvailableSeats(req.getTotalSeats()); // initial available seats = total
+                    f.setAvailableSeats(req.getTotalSeats()); // I set available seats same as total in start
                     f.setAircraft(req.getAircraft());
 
+                    // I am saving the flight and returning only the id to client
                     return flightService.createFlight(f)
                             .map(saved -> new AddFlightResponse(saved.getId()));
                 });
     }
 
-    /**
-     * List all flights
-     * GET /api/flight/airline/inventory
-     */
     @GetMapping
     public Flux<Flight> listAll() {
+        // I added this to show all flights in database
         return flightService.getAllFlights();
     }
 
-    /**
-     * Get flight by id
-     * GET /api/flight/airline/inventory/{id}
-     * returns 404 via GlobalErrorHandler if not found (service returns Mono.empty())
-     */
     @GetMapping("/{id}")
     public Mono<Flight> getById(@PathVariable String id) {
+        // I am finding one flight using id and returning error if not found
         return flightService.getFlightById(id)
                 .switchIfEmpty(Mono.error(new java.util.NoSuchElementException("flight not found")));
     }
 
-    /**
-     * Search by flight number
-     * GET /api/flight/airline/inventory/search?flightNumber=XYZ
-     */
-
-    // add to FlightController
     @GetMapping(params = "flightNumber")
     public Mono<Flight> searchByFlightNumberParam(@RequestParam String flightNumber) {
+        // I added this to search flight using flight number
         return flightService.findByFlightNumberMono(flightNumber)
                 .switchIfEmpty(Mono.error(new java.util.NoSuchElementException("flight not found")));
     }

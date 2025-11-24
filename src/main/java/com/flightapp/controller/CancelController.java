@@ -8,18 +8,14 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.Map;
 
-/*
- Human-first PNR check — returns Mono.error(new IllegalArgumentException(...))
- so GlobalErrorHandler will convert it to 400 + {"message": "..."}.
-*/
 @RestController
 @RequestMapping("/api/flight/airline/inventory")
 public class CancelController {
 
     @Autowired
-    private CancelService cancelService;
+    private CancelService cancelService; // I added this to call the cancel logic from service layer
 
-    // Conservative PNR rule: uppercase letters, digits, hyphen allowed; length 3..20
+    // I wrote this small check to make sure pnr format is correct before going ahead
     private boolean isValidPnr(String pnr) {
         if (pnr == null) return false;
         return pnr.matches("^[A-Z0-9\\-]{3,20}$");
@@ -27,11 +23,14 @@ public class CancelController {
 
     @DeleteMapping("/booking/{pnr}")
     public Mono<Map<String, String>> cancelBooking(@PathVariable String pnr) {
+
+        // I am checking pnr format first so wrong pnr can be stopped early
         if (!isValidPnr(pnr)) {
-            // return error that GlobalErrorHandler maps to HTTP 400 with { "message": "Invalid PNR" }
+            // I am throwing simple error that handler will convert into bad request message
             return Mono.error(new IllegalArgumentException("Invalid PNR"));
         }
 
+        // I am calling service to cancel booking and then preparing simple output map
         return cancelService.cancelBooking(pnr)
                 .map(msg -> {
                     Map<String, String> out = new HashMap<>();

@@ -11,26 +11,22 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 
-/*
- I made this defensive and explicit so controller tests don't see weird 500s.
- - If booking.createdAt is missing, I return a clear IllegalStateException (so test can be adjusted if needed).
- - If the flight id from booking is missing in DB, I throw NoSuchElementException so GlobalErrorHandler returns 404.
- - Logic: check time window -> restore seats -> delete booking -> return message.
-*/
 @Service
 public class CancelService {
 
     @Autowired
-    private BookingRepository bookingRepository;
+    private BookingRepository bookingRepository; // I added this to get booking details using pnr
 
     @Autowired
-    private FlightRepository flightRepository;
+    private FlightRepository flightRepository; // I added this to update flight seat count during cancel
 
     public Mono<String> cancelBooking(String pnr) {
 
+        // I am first checking if booking exists for given pnr
         return bookingRepository.findByPnr(pnr)
                 .flatMap(booking -> {
-                    // defensive: createdAt must exist for time-based cancellation rule
+
+                    // I am checking createdAt because cancel rule depends on booking time
                     Instant created = booking.getCreatedAt();
                     if (created == null) {
                         return Mono.error(new IllegalStateException("booking createdAt missing"));
@@ -38,25 +34,26 @@ public class CancelService {
 
                     Instant now = Instant.now();
 
-                    // 24-hour cancellation rule (cannot cancel after 24 hours)
+                    // I am applying 24 hour cancel rule
                     if (Duration.between(created, now).toHours() > 24) {
                         return Mono.error(new IllegalStateException("Cannot cancel after 24 hours"));
                     }
 
-                    // Restore seats in flight. If flight not found, surface 404.
+                    // I am fetching the flight linked with this booking to restore seats
                     return flightRepository.findById(booking.getFlightId())
                             .switchIfEmpty(Mono.error(new NoSuchElementException("Flight not found")))
                             .flatMap(flight -> {
+                                // I am adding seats back to available seats
                                 flight.setAvailableSeats(
                                         flight.getAvailableSeats() + booking.getSeatsBooked()
                                 );
                                 return flightRepository.save(flight);
                             })
-                            // delete booking after restoring seats
+                            // after updating seats I am removing the booking
                             .then(bookingRepository.delete(booking))
                             .thenReturn("Booking cancelled");
                 })
-                // IMPORTANT: if booking was not found, return NoSuchElementException so global handler returns 404
+                // I am sending not found error when no booking exists for pnr
                 .switchIfEmpty(Mono.error(new NoSuchElementException("PNR not found")));
     }
 }

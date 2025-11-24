@@ -11,22 +11,19 @@ import reactor.core.publisher.Mono;
 public class BookingService {
 
     @Autowired
-    private BookingRepository bookingRepository;
+    private BookingRepository bookingRepository; // I added this to talk to database for booking data
 
-    /**
-     * Return a single booking by PNR. If not found the Mono will be empty.
-     * Tests expect Mono.empty() when not found.
-     */
     public Mono<Booking> getBookingByPnr(String pnr) {
+        // I am returning one booking using pnr
+        // if not found repository gives empty so controller can send not found
         return bookingRepository.findByPnr(pnr);
     }
 
-    /**
-     * Return booking history by email. If none found returns empty Flux.
-     */
     public Flux<Booking> getBookingHistoryByEmail(String email) {
+        // I am returning all bookings for given email
+        // if no bookings then empty flux is returned
         return bookingRepository.findByEmail(email);
     }
 
-    // keep your existing booking/other methods (book/cancel) below or above
+    // I kept place for your other booking methods like book or cancel
 }

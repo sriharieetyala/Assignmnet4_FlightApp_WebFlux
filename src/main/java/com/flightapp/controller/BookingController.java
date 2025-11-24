@@ -20,19 +20,19 @@ import java.util.Set;
 public class BookingController {
 
     @Autowired
-    private FlightService flightService; // used for booking flow you already have
+    private FlightService flightService; // I added this because booking flow already depends on flight checks
 
     @Autowired
-    private BookingService bookingService; // new service for lookups
+    private BookingService bookingService; // I added this to fetch booking details and history
 
     @Autowired
-    private Validator validator;
+    private Validator validator; // I added this to do simple validation before calling service
 
     @PostMapping("/book")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<BookingResponse> bookTicket(@RequestBody BookingRequest req) {
 
-        // programmatic validation first
+        // I am checking request data first using validator so wrong data can be stopped early
         Set<ConstraintViolation<BookingRequest>> violations = validator.validate(req);
         if (!violations.isEmpty()) {
             ConstraintViolation<BookingRequest> v = violations.iterator().next();
@@ -40,7 +40,7 @@ public class BookingController {
             return Mono.error(new IllegalArgumentException(msg));
         }
 
-        // Forward to FlightService (business checks like seat availability are there)
+        // I am sending request data to flightService where seat check and booking logic is already written
         return flightService.bookTicket(
                 req.getFlightId(),
                 req.getSeats(),
@@ -51,18 +51,15 @@ public class BookingController {
         );
     }
 
-    /**
-     * Lookup single booking by PNR.
-     * returns 404 via GlobalErrorHandler when empty.
-     */
-    // GET booking by PNR
+    // I wrote this to get one booking using pnr
+    // if not found global error handler will send not found status
     @GetMapping("/booking/{pnr}")
     public Mono<Booking> getBookingByPnr(@PathVariable String pnr) {
         return bookingService.getBookingByPnr(pnr)
                 .switchIfEmpty(Mono.error(new java.util.NoSuchElementException("booking not found")));
     }
 
-    // GET booking history by email
+    // I added this to get all bookings done by one email id
     @GetMapping("/booking/email/{email}")
     public Flux<Booking> getBookingsByEmail(@PathVariable String email) {
         return bookingService.getBookingHistoryByEmail(email);
