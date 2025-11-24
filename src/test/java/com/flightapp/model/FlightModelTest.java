@@ -1,17 +1,12 @@
 package com.flightapp.model;
 
-
 import org.junit.jupiter.api.Test;
-import com.flightapp.exception.GlobalErrorHandler;
-import org.springframework.context.annotation.Import;
-
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * I use this to quickly verify that the Flight POJO behaves like I expect.
  */
-@Import(GlobalErrorHandler.class)
 class FlightModelTest {
 
     @Test

@@ -1,9 +1,7 @@
 package com.flightapp.dto.repsonse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flightapp.exception.GlobalErrorHandler;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.Import;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,8 +10,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * These tests are basic on purpose just enough to touch all getters, setters,
  * equals/hashCode, and a small JSON round trip.
  */
-@Import(GlobalErrorHandler.class)
-
 class DtoResponseTest {
 
     private final ObjectMapper mapper = new ObjectMapper();

@@ -19,9 +19,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import org.springframework.http.MediaType;
-import org.junit.jupiter.api.Disabled;
-
-@Disabled("Temporarily disabled – inconsistent validation in test slice")
 
 @WebFluxTest(controllers = BookingController.class)
 @AutoConfigureWebTestClient

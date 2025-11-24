@@ -1,3 +1,4 @@
+
 package com.flightapp.coverage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

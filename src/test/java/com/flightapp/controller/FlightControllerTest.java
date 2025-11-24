@@ -4,9 +4,7 @@ import com.flightapp.exception.GlobalErrorHandler;
 import com.flightapp.model.Flight;
 import com.flightapp.dto.request.AddFlightRequest;
 import com.flightapp.service.FlightService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -19,35 +17,19 @@ import reactor.core.publisher.Mono;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
-import com.flightapp.repository.FlightRepository;
-import jakarta.validation.Validator;
-import java.util.Collections;
-import org.junit.jupiter.api.Disabled;
-
-@Disabled("Disabled due to false failures in WebFlux test slice")
+import com.flightapp.exception.GlobalErrorHandler;
 
 
 @WebFluxTest(controllers = FlightController.class)
 @AutoConfigureWebTestClient
 @Import(GlobalErrorHandler.class)
-class AFlightControllerTest {
+class FlightControllerTest {
 
     @Autowired
     private WebTestClient web;
 
     @MockBean
     private FlightService flightService;
-
-    @MockBean
-    private FlightRepository flightRepository;
-
-    @MockBean
-    private Validator validator;
-
-    @BeforeEach
-    void setup() {
-        Mockito.when(validator.validate(Mockito.any())).thenReturn(Collections.emptySet());
-    }
 
     @Test
     void addInventory_duplicateFlight_returns400() {
@@ -61,7 +43,7 @@ class AFlightControllerTest {
         req.setPrice(5000f);
         req.setTotalSeats(150);
 
-        when(flightRepository.existsByFlightNumber("FHYD1")).thenReturn(Mono.just(true));
+        when(flightService.existsByFlightNumber("FHYD1")).thenReturn(Mono.just(true));
 
         web.post().uri("/api/flight/airline/inventory")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -87,7 +69,7 @@ class AFlightControllerTest {
         Flight saved = new Flight();
         saved.setId("id-mum-001");
 
-        when(flightRepository.existsByFlightNumber("FMUM1")).thenReturn(Mono.just(false));
+        when(flightService.existsByFlightNumber("FMUM1")).thenReturn(Mono.just(false));
         when(flightService.createFlight(any(Flight.class))).thenReturn(Mono.just(saved));
 
         web.post().uri("/api/flight/airline/inventory")

@@ -19,9 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for CancelService edge cases.
  * I check missing PNR, and DB error propagation when updating flight fails.
  */
-import com.flightapp.exception.GlobalErrorHandler;
-import org.springframework.context.annotation.Import;
-@Import(GlobalErrorHandler.class)
 class CancelServiceEdgeTest {
 
     CancelService cancelService;

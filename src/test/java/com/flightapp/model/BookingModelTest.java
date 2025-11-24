@@ -3,9 +3,7 @@ package com.flightapp.model;
 import com.flightapp.enums.BookingStatus;
 import com.flightapp.enums.Gender;
 import com.flightapp.enums.MealType;
-import com.flightapp.exception.GlobalErrorHandler;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.Import;
 
 import java.time.Instant;
 
@@ -14,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * I check Booking getters/setters and basic object behaviour here.
  */
-@Import(GlobalErrorHandler.class)
 class BookingModelTest {
 
     @Test

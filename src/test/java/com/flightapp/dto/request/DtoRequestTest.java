@@ -3,13 +3,11 @@ package com.flightapp.dto.request;
 import com.flightapp.enums.Gender;
 import com.flightapp.enums.MealType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flightapp.exception.GlobalErrorHandler;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.annotation.Import;
 
 import java.util.Set;
 
@@ -22,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * I used everyday names and kept the checks readable, not robotic.
  */
-@Import(GlobalErrorHandler.class)
 class DtoRequestTest {
 
     private final ObjectMapper mapper = new ObjectMapper();

@@ -22,9 +22,6 @@ import static org.mockito.Mockito.when;
  * I test FlightService behaviour with mocked repositories.
  * I keep examples relatable — flight ids like HYD-1 and BLR-2 so it feels real.
  */
-import com.flightapp.exception.GlobalErrorHandler;
-import org.springframework.context.annotation.Import;
-@Import(GlobalErrorHandler.class)
 class FlightServiceTest {
 
     private FlightRepository flightRepository;
