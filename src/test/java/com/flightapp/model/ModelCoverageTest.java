@@ -8,11 +8,15 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Instant;
+import com.flightapp.exception.GlobalErrorHandler;
+import org.springframework.context.annotation.Import;
+@Import(GlobalErrorHandler.class)
 
 /**
  * I mainly use this class to hit the deeper parts of equals/hashCode/toString.
  * These tests look simple, but they push Jacoco to count all the branches a POJO usually hides.
  */
+
 class ModelCoverageTest {
 
     @Test

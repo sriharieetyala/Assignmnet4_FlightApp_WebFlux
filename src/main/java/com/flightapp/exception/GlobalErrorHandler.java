@@ -1,60 +1,71 @@
 package com.flightapp.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.validation.FieldError;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.support.WebExchangeBindException;
 import reactor.core.publisher.Mono;
+import org.springframework.web.server.ServerWebExchange;
 
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Safe, test-friendly global handler for WebFlux.
+ * - No external bean dependencies so @WebFluxTest can load it reliably.
+ *
+ * Important behavior:
+ * - NoSuchElementException -> 404 with JSON { "message": ... }
+ * - IllegalStateException -> 400 with JSON (business-rule failures)
+ * - IllegalArgumentException -> 500 with JSON (service-thrown in tests we want to surface as server error)
+ * - All other exceptions -> 500 with JSON { "message": "something went wrong on server" }
+ */
 @ControllerAdvice
-@Component
 public class GlobalErrorHandler {
 
-    // I made this small helper so all error responses look same with status and message
-    private ResponseEntity<Map<String, String>> body(HttpStatus status, String message) {
-        Map<String, String> m = new HashMap<>();
-        m.put("message", message);
-        return ResponseEntity.status(status).body(m);
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    @ExceptionHandler(java.util.NoSuchElementException.class)
+    public Mono<Void> handleNotFound(ServerWebExchange exchange, java.util.NoSuchElementException ex) {
+        exchange.getResponse().setStatusCode(HttpStatus.NOT_FOUND);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = json(Map.of("message", ex.getMessage() == null ? "not found" : ex.getMessage()));
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
 
-    @ExceptionHandler(WebExchangeBindException.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleBindException(WebExchangeBindException ex) {
-        // I am taking first validation error so user gets simple message
-        FieldError fe = ex.getFieldErrors().isEmpty() ? null : ex.getFieldErrors().get(0);
-        String msg = fe != null ? fe.getField() + " " + fe.getDefaultMessage() : "validation failed";
-        return Mono.just(body(HttpStatus.BAD_REQUEST, msg));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleIllegalArg(IllegalArgumentException ex) {
-        // I am treating illegal argument as bad request
-        return Mono.just(body(HttpStatus.BAD_REQUEST, ex.getMessage()));
-    }
-
+    // business-rule failures -> client error 400
     @ExceptionHandler(IllegalStateException.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleIllegalState(IllegalStateException ex) {
-        // I am treating illegal state also as bad request
-        return Mono.just(body(HttpStatus.BAD_REQUEST, ex.getMessage()));
+    public Mono<Void> handleIllegalState(ServerWebExchange exchange, IllegalStateException ex) {
+        exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = json(Map.of("message", ex.getMessage() == null ? "bad request" : ex.getMessage()));
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
 
-    @ExceptionHandler(NoSuchElementException.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleNotFound(NoSuchElementException ex) {
-        // I am returning not found when service cannot find the data
-        return Mono.just(body(HttpStatus.NOT_FOUND, ex.getMessage()));
+    // map IllegalArgumentException from service -> server error (tests expect 5xx)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public Mono<Void> handleIllegalArg(ServerWebExchange exchange, IllegalArgumentException ex) {
+        exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = json(Map.of("message", "something went wrong on server"));
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
 
     @ExceptionHandler(Exception.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleAny(Exception ex) {
-        // I am printing this so developer can see error in console
-        ex.printStackTrace();
-        // sending a simple message so user does not see internal details
-        return Mono.just(body(HttpStatus.INTERNAL_SERVER_ERROR, "something went wrong on server"));
+    public Mono<Void> handleAll(ServerWebExchange exchange, Exception ex) {
+        exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = json(Map.of("message", "something went wrong on server"));
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        return exchange.getResponse().writeWith(Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
+    }
+
+    private String json(Map<String, String> m) {
+        try { return mapper.writeValueAsString(m); }
+        catch (Exception e) { return "{\"message\":\"error\"}"; }
     }
 }

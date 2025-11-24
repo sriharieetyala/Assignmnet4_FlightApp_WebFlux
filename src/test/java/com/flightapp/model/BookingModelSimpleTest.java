@@ -5,7 +5,9 @@ import com.flightapp.enums.Gender;
 import com.flightapp.enums.MealType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.flightapp.exception.GlobalErrorHandler;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 
 import java.time.Instant;
 
@@ -15,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * I keep this class only for JSON round-trip coverage using Jackson.
  * It bumps Jacoco nicely because Instant fields often get ignored otherwise.
  */
+@Import(GlobalErrorHandler.class)
 class BookingModelSimpleTest {
 
     private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());

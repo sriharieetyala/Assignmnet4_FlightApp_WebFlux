@@ -23,6 +23,9 @@ import static org.mockito.Mockito.when;
  *
  * I keep examples local (F1 = Mumbai flight, etc.) so it feels real.
  */
+import com.flightapp.exception.GlobalErrorHandler;
+import org.springframework.context.annotation.Import;
+@Import(GlobalErrorHandler.class)
 class CancelServiceTest {
 
     private BookingRepository bookingRepository;

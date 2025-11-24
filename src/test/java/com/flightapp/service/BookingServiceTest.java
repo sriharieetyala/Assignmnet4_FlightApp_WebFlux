@@ -17,6 +17,9 @@ import static org.mockito.Mockito.when;
  * - lookup by PNR
  * - booking history by email (empty and non-empty)
  */
+import com.flightapp.exception.GlobalErrorHandler;
+import org.springframework.context.annotation.Import;
+@Import(GlobalErrorHandler.class)
 class BookingServiceTest {
 
     @Mock

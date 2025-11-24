@@ -1,5 +1,5 @@
 package com.flightapp.model;
-// lombok imports
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,13 +14,13 @@ public class Flight {
     @Id
     private String id;
 
-    private String airline;       // airline name
-    private String flightNumber;  // unique flight number
+    private String airline;
+    private String flightNumber;
     private String fromPlace;
     private String toPlace;
-    private String departureDateTime; // ISO string for now
+    private String departureDateTime;
     private String arrivalDateTime;
-    private float price; // use float as requested
+    private float price;
     private int totalSeats;
     private int availableSeats;
     private String aircraft;

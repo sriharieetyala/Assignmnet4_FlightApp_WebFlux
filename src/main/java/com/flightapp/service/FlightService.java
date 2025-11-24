@@ -20,13 +20,12 @@ import java.util.Random;
 public class FlightService {
 
     @Autowired
-    private FlightRepository flightRepository; // I added this to fetch or save flight data
+    private FlightRepository flightRepository;
 
     @Autowired
-    private BookingRepository bookingRepository; // I added this to save booking info
+    private BookingRepository bookingRepository;
 
     public Mono<Flight> createFlight(Flight flight) {
-        // I am making sure available seats has proper value if someone passed zero
         if (flight.getAvailableSeats() == 0) {
             flight.setAvailableSeats(flight.getTotalSeats());
         }
@@ -34,24 +33,20 @@ public class FlightService {
     }
 
     public Mono<Boolean> existsByFlightNumber(String flightNumber) {
-        // I am checking if flight number already exists
         return flightRepository.findByFlightNumber(flightNumber)
                 .map(f -> true)
                 .defaultIfEmpty(false);
     }
 
     public Flux<Flight> getAllFlights() {
-        // I am fetching all flights from database
         return flightRepository.findAll();
     }
 
     public Mono<Flight> getFlightById(String id) {
-        // I am fetching flight using id
         return flightRepository.findById(id);
     }
 
     public Mono<Flight> findByFlightNumberMono(String flightNumber) {
-        // I am fetching one flight using flight number
         return flightRepository.findByFlightNumber(flightNumber);
     }
 
@@ -62,22 +57,18 @@ public class FlightService {
                                             Gender gender,
                                             MealType mealPreference) {
 
-        // I am checking if flight exists first
         return flightRepository.findById(flightId)
                 .switchIfEmpty(Mono.error(new java.util.NoSuchElementException("Flight not found")))
                 .flatMap(flight -> {
 
-                    // I am checking seat count rules
                     if (seats <= 0) return Mono.error(new IllegalArgumentException("seats must be > 0"));
                     if (flight.getAvailableSeats() < seats) return Mono.error(new IllegalStateException("Not enough seats"));
 
-                    // I am reducing available seats after booking
                     flight.setAvailableSeats(flight.getAvailableSeats() - seats);
 
                     return flightRepository.save(flight)
                             .flatMap(savedFlight -> {
 
-                                // I am creating new booking object here
                                 Booking booking = new Booking();
                                 booking.setPnr(generatePnr());
                                 booking.setFlightId(savedFlight.getId());
@@ -89,7 +80,6 @@ public class FlightService {
                                 booking.setCreatedAt(Instant.now());
                                 booking.setStatus(BookingStatus.BOOKED);
 
-                                // I am saving the booking and returning only the pnr
                                 return bookingRepository.save(booking)
                                         .map(b -> new BookingResponse(b.getPnr()));
                             });
@@ -97,7 +87,6 @@ public class FlightService {
     }
 
     private String generatePnr() {
-        // I made this small helper to generate a simple 6 character pnr
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         Random rnd = new Random();
         StringBuilder sb = new StringBuilder(6);

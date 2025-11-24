@@ -22,6 +22,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * These tests cover edge branches and use argument captors to make sure we saved correct things.
  * I use small, clear flight examples that sound local — Hyderabad, Chennai etc.
  */
+import com.flightapp.exception.GlobalErrorHandler;
+import org.springframework.context.annotation.Import;
+@Import(GlobalErrorHandler.class)
 class FlightServiceBranchTest {
 
     FlightService flightService;
