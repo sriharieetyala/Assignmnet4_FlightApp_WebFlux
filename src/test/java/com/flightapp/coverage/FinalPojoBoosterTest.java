@@ -10,8 +10,9 @@ import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Final booster — tries to load classes but skips those not present.
+ * Final booster  tries to load classes but skips those not present.
  * This avoids ClassNotFoundException halting the test run.
+ * And the tests were refered from AI help since i could not find out a way to improve i made the testcases from spring io site but still less than 70 so i have leveraged ai help
  */
 public class FinalPojoBoosterTest {
 
